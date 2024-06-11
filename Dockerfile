@@ -1,7 +1,4 @@
-FROM eclipse-temurin:11-jdk-jammy as maven_builder
-
-RUN apt-get update
-RUN apt-get install -y maven
+FROM maven:3.9.6-eclipse-temurin-17 as maven_builder
 
 ENV HOME=/app
 
@@ -9,9 +6,7 @@ WORKDIR $HOME
 
 ADD pom.xml $HOME
 
-#RUN ["mvn", "dependency:resolve"]
-
-#RUN ["/usr/local/bin/mvn-entrypoint.sh", "mvn", "verify", "clean", "--fail-never"]
+RUN ["mvn", "dependency:resolve"]
 
 ADD . $HOME
 
@@ -20,7 +15,7 @@ RUN ["mvn","clean","install","-T","2C","-DskipTests=true"]
 
 FROM bitnami/tomcat:9.0
 
-COPY --from=maven_builder /app/target/webjsp.war /opt/bitnami/tomcat/webapps/webjsp.war
+COPY --from=maven_builder /app/target/security.war /opt/bitnami/tomcat/webapps/security.war
 
 EXPOSE 8080
 

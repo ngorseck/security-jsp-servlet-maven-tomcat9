@@ -1,21 +1,70 @@
 version: '3'
 
 services:
-  tomcat:
-    image: webjsp-tomcat:1.0.4
-    container_name: webjsp-tomcat4
+  app-security:
+    image: app-security:1.0.0
+    container_name: app-security
     build:
       context: ./
       dockerfile: Dockerfile
     ports:
       - '8084:8080'
     environment:
-      - TOMCAT_USERNAME=seckngor
+      - TOMCAT_USERNAME=seck
       - TOMCAT_PASSWORD=passer
+      - SECURITY_DB_USER=user
+      - SECURITY_DB_PWD=passer123@
+      - DB_URL_PROD=jdbc:mysql://mysql-bootcamp:3306/securitydb?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
     volumes:
       - bitnami-data:/opt/bitnami
+    depends_on:
+      - mysql-bootcamp
+    links:
+      - mysql-bootcamp
+    restart: unless-stopped
+    networks:
+      - backend
+
+  mysql-bootcamp:
+    image: mysql:8.0
+    container_name: container-mysql-bootcamp
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: securitydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: passer123@
+    ports:
+      - 3306:3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD
+
+  phpmyadmin-bootcamp:
+    container_name: phpmyadmin-bootcamp
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+      - 8085:80
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      PMA_HOST: mysql-bootcamp
+      PMA_USER: user
+      PMA_PASSWORD: passer123@
+    depends_on:
+      - mysql-bootcamp
+    restart: unless-stopped
+    networks:
+      - backend
+
 volumes:
+  mysql_data:
+    driver: local
   bitnami-data:
     driver: local
+
+networks:
+  backend:
 
 #docker compose up -d
